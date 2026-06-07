@@ -1,0 +1,65 @@
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import toast from "react-hot-toast";
+import { AuthLayout } from "@/components/AuthLayout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { signUp } from "@/lib/store";
+
+export const Route = createFileRoute("/auth/signup")({
+  head: () => ({ meta: [{ title: "Create account — DigitVault" }] }),
+  component: SignUpPage,
+});
+
+function SignUpPage() {
+  const nav = useNavigate();
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!fullName.trim()) return toast.error("Please enter your name");
+    if (password.length < 6) return toast.error("Password must be at least 6 characters");
+    if (password !== confirm) return toast.error("Passwords don't match");
+    try {
+      const u = signUp({ full_name: fullName, email, password });
+      toast.success(`Welcome, ${u.full_name.split(" ")[0]}!`);
+      nav({ to: u.is_admin ? "/admin" : "/dashboard" });
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  }
+
+  return (
+    <AuthLayout
+      title="Create your account"
+      subtitle="Join DigitVault to start downloading premium products."
+      footer={<>Already have an account? <Link to="/auth/login" className="font-medium text-primary hover:underline">Log in</Link></>}
+    >
+      <form onSubmit={submit} className="space-y-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="name">Full name</Label>
+          <Input id="name" value={fullName} onChange={(e) => setFullName(e.target.value)} required autoFocus />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="email">Email</Label>
+          <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="password">Password</Label>
+          <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="confirm">Confirm password</Label>
+          <Input id="confirm" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
+        </div>
+        <Button type="submit" className="w-full gradient-primary text-primary-foreground shadow-glow">
+          Create account
+        </Button>
+      </form>
+    </AuthLayout>
+  );
+}
