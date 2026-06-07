@@ -3,7 +3,10 @@ import { db, subscribe, type Profile } from "./store";
 
 export function useDB() {
   const [version, setVersion] = useState(0);
-  useEffect(() => subscribe(() => setVersion((v) => v + 1)), []);
+  useEffect(() => {
+    const unsub = subscribe(() => setVersion((v) => v + 1));
+    return () => { unsub; };
+  }, []);
   return { ...db.get(), _v: version };
 }
 
