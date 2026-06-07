@@ -124,7 +124,7 @@ function AdminUsers() {
                     </td>
                   </tr>
                 )}
-              </>
+              </Fragment>
             ))}
           </tbody>
         </table>
