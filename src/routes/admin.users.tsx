@@ -76,8 +76,8 @@ function AdminUsers() {
               <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">No users yet.</td></tr>
             )}
             {rows.map((u) => (
-              <>
-                <tr key={u.id} className="hover:bg-muted/30 cursor-pointer" onClick={() => setExpanded(expanded === u.id ? null : u.id)}>
+              <Fragment key={u.id}>
+                <tr className="hover:bg-muted/30 cursor-pointer" onClick={() => setExpanded(expanded === u.id ? null : u.id)}>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2.5">
                       <img src={u.avatar_url} alt="" className="h-8 w-8 rounded-full bg-muted" />
