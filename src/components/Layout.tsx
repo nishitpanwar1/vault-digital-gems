@@ -157,9 +157,9 @@ export function Footer() {
           <h4 className="mb-3 text-sm font-semibold">Browse</h4>
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li><Link to="/products" className="hover:text-foreground">All Products</Link></li>
-            <li><Link to="/products" search={{ category: "ebooks" }} className="hover:text-foreground">E-Books</Link></li>
-            <li><Link to="/products" search={{ category: "templates" }} className="hover:text-foreground">Templates</Link></li>
-            <li><Link to="/products" search={{ category: "courses" }} className="hover:text-foreground">Courses</Link></li>
+            <li><Link to="/products" className="hover:text-foreground">E-Books</Link></li>
+            <li><Link to="/products" className="hover:text-foreground">Templates</Link></li>
+            <li><Link to="/products" className="hover:text-foreground">Courses</Link></li>
           </ul>
         </div>
         <div>
