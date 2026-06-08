@@ -52,95 +52,10 @@ type DB = {
   session_user_id: string | null;
 };
 
-const KEY = "digitvault_db_v1";
+const KEY = "digitvault_db_v2";
 const ADMIN_EMAIL = "nishitpanwar@gmail.com";
 
-const SEED_PRODUCTS: Product[] = [
-  {
-    id: crypto.randomUUID(),
-    title: "The Ultimate Notion Productivity Bundle",
-    description:
-      "A curated collection of 40+ Notion templates covering personal goals, OKRs, finance, content planning, and a full second brain system. Lifetime updates included.",
-    category: "templates",
-    price: 0,
-    cover_image_url:
-      "https://images.unsplash.com/photo-1517842645767-c639042777db?w=1200&q=80",
-    file_url: "/files/notion-bundle.zip",
-    download_count: 1284,
-    is_published: true,
-    created_at: new Date(Date.now() - 86400000 * 14).toISOString(),
-  },
-  {
-    id: crypto.randomUUID(),
-    title: "Designing for the Web — eBook",
-    description:
-      "A 240-page deep dive into modern web design fundamentals: typography, color theory, layout systems, accessibility, and design tokens.",
-    category: "ebooks",
-    price: 19,
-    cover_image_url:
-      "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=1200&q=80",
-    file_url: "/files/designing-web.pdf",
-    download_count: 642,
-    is_published: true,
-    created_at: new Date(Date.now() - 86400000 * 10).toISOString(),
-  },
-  {
-    id: crypto.randomUUID(),
-    title: "Mastering TypeScript — Video Course",
-    description:
-      "8 hours of premium video lessons covering generics, conditional types, narrowing, and real-world patterns used in production codebases.",
-    category: "courses",
-    price: 49,
-    cover_image_url:
-      "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=1200&q=80",
-    file_url: "/files/ts-course.zip",
-    download_count: 318,
-    is_published: true,
-    created_at: new Date(Date.now() - 86400000 * 7).toISOString(),
-  },
-  {
-    id: crypto.randomUUID(),
-    title: "Founder Starter Bundle",
-    description:
-      "Pitch deck templates, financial models, legal templates, and brand guidelines — everything a new founder needs in one bundle.",
-    category: "bundles",
-    price: 29,
-    cover_image_url:
-      "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1200&q=80",
-    file_url: "/files/founder-bundle.zip",
-    download_count: 217,
-    is_published: true,
-    created_at: new Date(Date.now() - 86400000 * 5).toISOString(),
-  },
-  {
-    id: crypto.randomUUID(),
-    title: "Minimalist Resume Templates (Figma)",
-    description:
-      "10 beautifully designed resume templates in Figma with editable color palettes and typography systems. Perfect for designers and developers.",
-    category: "templates",
-    price: 0,
-    cover_image_url:
-      "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=1200&q=80",
-    file_url: "/files/resume-templates.fig",
-    download_count: 894,
-    is_published: true,
-    created_at: new Date(Date.now() - 86400000 * 3).toISOString(),
-  },
-  {
-    id: crypto.randomUUID(),
-    title: "Atomic Habits Workbook (PDF)",
-    description:
-      "An interactive companion workbook to apply the Atomic Habits framework with daily trackers, reflection prompts, and habit stacking templates.",
-    category: "ebooks",
-    price: 9,
-    cover_image_url:
-      "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1200&q=80",
-    file_url: "/files/atomic-workbook.pdf",
-    download_count: 432,
-    is_published: true,
-    created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
-  },
-];
+const SEED_PRODUCTS: Product[] = [];
 
 function emptyDB(): DB {
   return {
