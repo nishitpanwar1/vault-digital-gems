@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { Navbar, Footer } from "@/components/Layout";
 import { ProductCard } from "@/components/ProductCard";
+import { YouTubeSection } from "@/components/YouTubeSection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useDB } from "@/lib/use-store";
@@ -168,6 +169,9 @@ function HomePage() {
           </Link>
         </div>
       </section>
+
+      {/* YouTube */}
+      <YouTubeSection />
 
       {/* Testimonials */}
       {topReviews.length > 0 && (
