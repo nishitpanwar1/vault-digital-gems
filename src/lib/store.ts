@@ -1,12 +1,14 @@
-// Local data store with pub/sub for pseudo-realtime updates.
-// Persists to localStorage and broadcasts via storage events (cross-tab) +
-// custom events (same tab).
+// Lovable Cloud–backed store with realtime subscriptions.
+// Keeps a small in-memory cache populated by initial fetches +
+// postgres_changes streams so any component reading `useDB()` updates
+// instantly across devices.
+
+import { supabase } from "@/integrations/supabase/client";
 
 export type Profile = {
   id: string;
   full_name: string;
   email: string;
-  password: string; // demo only — plain text in localStorage
   avatar_url: string;
   is_admin: boolean;
   created_at: string;
@@ -52,243 +54,230 @@ type DB = {
   session_user_id: string | null;
 };
 
-const KEY = "digitvault_db_v2";
-const ADMIN_EMAIL = "nishitpanwar@gmail.com";
-
-const SEED_PRODUCTS: Product[] = [];
-
-function emptyDB(): DB {
-  return {
-    profiles: [],
-    products: SEED_PRODUCTS,
-    downloads: [],
-    reviews: [],
-    subscribers: [],
-    session_user_id: null,
-  };
-}
-
-const EVENT = "digitvault:update";
-
-function read(): DB {
-  if (typeof window === "undefined") return emptyDB();
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) {
-      const fresh = emptyDB();
-      localStorage.setItem(KEY, JSON.stringify(fresh));
-      return fresh;
-    }
-    return JSON.parse(raw) as DB;
-  } catch {
-    return emptyDB();
-  }
-}
-
-function write(db: DB) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(KEY, JSON.stringify(db));
-  window.dispatchEvent(new CustomEvent(EVENT));
-}
-
-export const db = {
-  get: read,
-  set: write,
-  reset: () => write(emptyDB()),
+let state: DB = {
+  profiles: [],
+  products: [],
+  downloads: [],
+  reviews: [],
+  subscribers: [],
+  session_user_id: null,
 };
 
-type Listener = () => void;
-const listeners = new Set<Listener>();
+let adminIds = new Set<string>();
 
-if (typeof window !== "undefined") {
-  window.addEventListener("storage", (e) => {
-    if (e.key === KEY) listeners.forEach((l) => l());
-  });
-  window.addEventListener(EVENT, () => listeners.forEach((l) => l()));
+const listeners = new Set<() => void>();
+function notify() {
+  listeners.forEach((l) => l());
 }
-
-export function subscribe(l: Listener) {
+export function subscribe(l: () => void) {
   listeners.add(l);
   return () => listeners.delete(l);
 }
 
+export const db = {
+  get: () => state,
+};
+
+function decorateProfiles(rows: any[]): Profile[] {
+  return rows.map((p) => ({
+    id: p.id,
+    full_name: p.full_name ?? "",
+    email: p.email ?? "",
+    avatar_url:
+      p.avatar_url ||
+      `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(p.full_name || p.email || "User")}`,
+    is_admin: adminIds.has(p.id),
+    created_at: p.created_at,
+  }));
+}
+
+async function fetchProfiles() {
+  const [{ data: roles }, { data: profs }] = await Promise.all([
+    supabase.from("user_roles").select("user_id, role").eq("role", "admin"),
+    supabase.from("profiles").select("*").order("created_at", { ascending: false }),
+  ]);
+  adminIds = new Set((roles ?? []).map((r: any) => r.user_id));
+  state = { ...state, profiles: decorateProfiles(profs ?? []) };
+  notify();
+}
+
+async function fetchProducts() {
+  const { data } = await supabase.from("products").select("*").order("created_at", { ascending: false });
+  state = { ...state, products: (data ?? []) as Product[] };
+  notify();
+}
+
+async function fetchDownloads() {
+  const { data } = await supabase.from("downloads").select("*").order("downloaded_at", { ascending: false });
+  state = { ...state, downloads: (data ?? []) as Download[] };
+  notify();
+}
+
+async function fetchReviews() {
+  const { data } = await supabase.from("reviews").select("*").order("created_at", { ascending: false });
+  state = { ...state, reviews: (data ?? []) as Review[] };
+  notify();
+}
+
+async function fetchSubscribers() {
+  const { data } = await supabase.from("subscribers").select("*").order("created_at", { ascending: false });
+  state = { ...state, subscribers: (data ?? []) as Subscriber[] };
+  notify();
+}
+
+let booted = false;
+export function bootRealtime() {
+  if (booted || typeof window === "undefined") return;
+  booted = true;
+
+  // Initial session
+  supabase.auth.getSession().then(({ data }) => {
+    state = { ...state, session_user_id: data.session?.user.id ?? null };
+    notify();
+    void refreshAll();
+  });
+
+  supabase.auth.onAuthStateChange((_event, session) => {
+    state = { ...state, session_user_id: session?.user.id ?? null };
+    notify();
+    void fetchProfiles();
+    void fetchDownloads();
+  });
+
+  // Realtime
+  supabase
+    .channel("dv-products")
+    .on("postgres_changes", { event: "*", schema: "public", table: "products" }, () => void fetchProducts())
+    .subscribe();
+  supabase
+    .channel("dv-downloads")
+    .on("postgres_changes", { event: "*", schema: "public", table: "downloads" }, () => void fetchDownloads())
+    .subscribe();
+  supabase
+    .channel("dv-reviews")
+    .on("postgres_changes", { event: "*", schema: "public", table: "reviews" }, () => void fetchReviews())
+    .subscribe();
+  supabase
+    .channel("dv-profiles")
+    .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () => void fetchProfiles())
+    .on("postgres_changes", { event: "*", schema: "public", table: "user_roles" }, () => void fetchProfiles())
+    .subscribe();
+  supabase
+    .channel("dv-subs")
+    .on("postgres_changes", { event: "*", schema: "public", table: "subscribers" }, () => void fetchSubscribers())
+    .subscribe();
+}
+
+export async function refreshAll() {
+  await Promise.all([fetchProfiles(), fetchProducts(), fetchReviews(), fetchDownloads(), fetchSubscribers()]);
+}
+
 // ============ AUTH ============
 
-export function signUp(input: {
-  full_name: string;
-  email: string;
-  password: string;
-}): Profile {
-  const cur = read();
-  const email = input.email.trim().toLowerCase();
-  if (cur.profiles.find((p) => p.email === email)) {
-    throw new Error("An account with this email already exists.");
-  }
-  const profile: Profile = {
-    id: crypto.randomUUID(),
-    full_name: input.full_name.trim(),
-    email,
+export async function signUp(input: { full_name: string; email: string; password: string }) {
+  const { data, error } = await supabase.auth.signUp({
+    email: input.email.trim().toLowerCase(),
     password: input.password,
-    avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(input.full_name)}`,
-    is_admin: email === ADMIN_EMAIL,
-    created_at: new Date().toISOString(),
-  };
-  cur.profiles.push(profile);
-  cur.session_user_id = profile.id;
-  write(cur);
-  return profile;
+    options: {
+      data: { full_name: input.full_name.trim() },
+      emailRedirectTo: `${window.location.origin}/`,
+    },
+  });
+  if (error) throw error;
+  return data;
 }
 
-export function logIn(email: string, password: string): Profile {
-  const cur = read();
-  const e = email.trim().toLowerCase();
-  const profile = cur.profiles.find((p) => p.email === e);
-  if (!profile || profile.password !== password) {
-    throw new Error("Invalid email or password.");
-  }
-  cur.session_user_id = profile.id;
-  write(cur);
-  return profile;
+export async function logIn(email: string, password: string) {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: email.trim().toLowerCase(),
+    password,
+  });
+  if (error) throw error;
+  return data;
 }
 
-export function logOut() {
-  const cur = read();
-  cur.session_user_id = null;
-  write(cur);
+export async function logOut() {
+  await supabase.auth.signOut();
 }
 
-export function currentUser(): Profile | null {
-  const cur = read();
-  if (!cur.session_user_id) return null;
-  return cur.profiles.find((p) => p.id === cur.session_user_id) ?? null;
-}
-
-export function updateProfile(id: string, patch: Partial<Profile>) {
-  const cur = read();
-  const i = cur.profiles.findIndex((p) => p.id === id);
-  if (i === -1) return;
-  cur.profiles[i] = { ...cur.profiles[i], ...patch };
-  write(cur);
+export async function updateProfile(id: string, patch: Partial<Profile>) {
+  const { error } = await supabase
+    .from("profiles")
+    .update({ full_name: patch.full_name, avatar_url: patch.avatar_url })
+    .eq("id", id);
+  if (error) throw error;
 }
 
 // ============ PRODUCTS ============
 
-export function listProducts(opts?: { onlyPublished?: boolean }): Product[] {
-  const cur = read();
-  return opts?.onlyPublished
-    ? cur.products.filter((p) => p.is_published)
-    : cur.products;
-}
-
-export function getProduct(id: string): Product | undefined {
-  return read().products.find((p) => p.id === id);
-}
-
-export function createProduct(p: Omit<Product, "id" | "created_at" | "download_count">) {
-  const cur = read();
-  cur.products.unshift({
-    ...p,
-    id: crypto.randomUUID(),
-    download_count: 0,
-    created_at: new Date().toISOString(),
+export async function createProduct(p: Omit<Product, "id" | "created_at" | "download_count">) {
+  const { error } = await supabase.from("products").insert({
+    title: p.title,
+    description: p.description,
+    category: p.category,
+    price: p.price,
+    cover_image_url: p.cover_image_url,
+    file_url: p.file_url,
+    is_published: p.is_published,
   });
-  write(cur);
+  if (error) throw error;
 }
 
-export function updateProduct(id: string, patch: Partial<Product>) {
-  const cur = read();
-  const i = cur.products.findIndex((p) => p.id === id);
-  if (i === -1) return;
-  cur.products[i] = { ...cur.products[i], ...patch };
-  write(cur);
+export async function updateProduct(id: string, patch: Partial<Product>) {
+  const { error } = await supabase.from("products").update(patch).eq("id", id);
+  if (error) throw error;
 }
 
-export function deleteProduct(id: string) {
-  const cur = read();
-  cur.products = cur.products.filter((p) => p.id !== id);
-  cur.downloads = cur.downloads.filter((d) => d.product_id !== id);
-  cur.reviews = cur.reviews.filter((r) => r.product_id !== id);
-  write(cur);
+export async function deleteProduct(id: string) {
+  const { error } = await supabase.from("products").delete().eq("id", id);
+  if (error) throw error;
 }
 
 // ============ DOWNLOADS ============
 
-export function recordDownload(userId: string, productId: string) {
-  const cur = read();
-  cur.downloads.unshift({
-    id: crypto.randomUUID(),
-    user_id: userId,
-    product_id: productId,
-    downloaded_at: new Date().toISOString(),
-  });
-  const i = cur.products.findIndex((p) => p.id === productId);
-  if (i !== -1) cur.products[i].download_count += 1;
-  write(cur);
-}
-
-export function userDownloads(userId: string): Download[] {
-  return read().downloads.filter((d) => d.user_id === userId);
+export async function recordDownload(userId: string, productId: string) {
+  const { error } = await supabase.from("downloads").insert({ user_id: userId, product_id: productId });
+  if (error) throw error;
 }
 
 export function hasDownloaded(userId: string, productId: string): boolean {
-  return read().downloads.some(
-    (d) => d.user_id === userId && d.product_id === productId,
-  );
+  return state.downloads.some((d) => d.user_id === userId && d.product_id === productId);
 }
 
 // ============ REVIEWS ============
 
-export function productReviews(productId: string): Review[] {
-  return read().reviews.filter((r) => r.product_id === productId);
-}
-
-export function userReviewFor(userId: string, productId: string) {
-  return read().reviews.find(
-    (r) => r.user_id === userId && r.product_id === productId,
-  );
-}
-
-export function upsertReview(input: {
+export async function upsertReview(input: {
   user_id: string;
   product_id: string;
   rating: number;
   comment: string;
 }) {
-  const cur = read();
-  const i = cur.reviews.findIndex(
-    (r) => r.user_id === input.user_id && r.product_id === input.product_id,
-  );
-  if (i !== -1) {
-    cur.reviews[i] = {
-      ...cur.reviews[i],
-      rating: input.rating,
-      comment: input.comment,
-      created_at: new Date().toISOString(),
-    };
-  } else {
-    cur.reviews.unshift({
-      id: crypto.randomUUID(),
-      ...input,
-      created_at: new Date().toISOString(),
-    });
-  }
-  write(cur);
+  const { error } = await supabase
+    .from("reviews")
+    .upsert(
+      {
+        user_id: input.user_id,
+        product_id: input.product_id,
+        rating: input.rating,
+        comment: input.comment,
+      },
+      { onConflict: "user_id,product_id" },
+    );
+  if (error) throw error;
 }
 
-export function deleteReview(id: string) {
-  const cur = read();
-  cur.reviews = cur.reviews.filter((r) => r.id !== id);
-  write(cur);
+export async function deleteReview(id: string) {
+  const { error } = await supabase.from("reviews").delete().eq("id", id);
+  if (error) throw error;
 }
 
-export function addSubscriber(email: string) {
-  const cur = read();
+// ============ SUBSCRIBERS ============
+
+export async function addSubscriber(email: string) {
   const e = email.trim().toLowerCase();
-  if (cur.subscribers.some((s) => s.email === e)) return;
-  cur.subscribers.unshift({
-    id: crypto.randomUUID(),
-    email: e,
-    created_at: new Date().toISOString(),
-  });
-  write(cur);
+  const { error } = await supabase.from("subscribers").insert({ email: e });
+  if (error && !String(error.message).toLowerCase().includes("duplicate")) throw error;
 }
+
+// Boot on first import in the browser
+if (typeof window !== "undefined") bootRealtime();

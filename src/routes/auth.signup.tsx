@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signUp } from "@/lib/store";
+import { lovable } from "@/integrations/lovable";
 
 export const Route = createFileRoute("/auth/signup")({
   head: () => ({ meta: [{ title: "Create account — DigitVault" }] }),
@@ -18,19 +19,29 @@ function SignUpPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!fullName.trim()) return toast.error("Please enter your name");
     if (password.length < 6) return toast.error("Password must be at least 6 characters");
     if (password !== confirm) return toast.error("Passwords don't match");
+    setLoading(true);
     try {
-      const u = signUp({ full_name: fullName, email, password });
-      toast.success(`Welcome, ${u.full_name.split(" ")[0]}!`);
-      nav({ to: u.is_admin ? "/admin" : "/dashboard" });
+      await signUp({ full_name: fullName, email, password });
+      toast.success("Account created!");
+      nav({ to: "/dashboard" });
     } catch (err) {
       toast.error((err as Error).message);
+    } finally {
+      setLoading(false);
     }
+  }
+
+  async function google() {
+    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
+    if (result.error) toast.error(result.error.message);
+    if (!result.redirected && !result.error) nav({ to: "/dashboard" });
   }
 
   return (
@@ -40,26 +51,27 @@ function SignUpPage() {
       footer={<>Already have an account? <Link to="/auth/login" className="font-medium text-primary hover:underline">Log in</Link></>}
     >
       <form onSubmit={submit} className="space-y-4">
-        <div className="space-y-1.5">
-          <Label htmlFor="name">Full name</Label>
-          <Input id="name" value={fullName} onChange={(e) => setFullName(e.target.value)} required autoFocus />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="password">Password</Label>
-          <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="confirm">Confirm password</Label>
-          <Input id="confirm" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
-        </div>
-        <Button type="submit" className="w-full gradient-primary text-primary-foreground shadow-glow">
-          Create account
+        <div className="space-y-1.5"><Label htmlFor="name">Full name</Label>
+          <Input id="name" value={fullName} onChange={(e) => setFullName(e.target.value)} required autoFocus /></div>
+        <div className="space-y-1.5"><Label htmlFor="email">Email</Label>
+          <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
+        <div className="space-y-1.5"><Label htmlFor="password">Password</Label>
+          <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /></div>
+        <div className="space-y-1.5"><Label htmlFor="confirm">Confirm password</Label>
+          <Input id="confirm" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required /></div>
+        <Button type="submit" disabled={loading} className="w-full gradient-primary text-primary-foreground shadow-glow">
+          {loading ? "Creating..." : "Create account"}
         </Button>
       </form>
+
+      <div className="relative my-5">
+        <div className="absolute inset-0 flex items-center"><div className="w-full border-t" /></div>
+        <div className="relative flex justify-center text-xs"><span className="bg-card px-2 text-muted-foreground">or</span></div>
+      </div>
+
+      <Button type="button" variant="outline" onClick={google} className="w-full">
+        Continue with Google
+      </Button>
     </AuthLayout>
   );
 }
