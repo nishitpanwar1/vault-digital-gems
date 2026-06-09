@@ -2,7 +2,7 @@ import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tan
 import { useEffect } from "react";
 import { BarChart3, Users, Package, Download, MessageSquare, Home as HomeIcon } from "lucide-react";
 import { Toaster } from "react-hot-toast";
-import { useCurrentUser } from "@/lib/use-store";
+import { useCurrentUser, useDB } from "@/lib/use-store";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin — DigitVault" }] }),
@@ -19,14 +19,23 @@ const NAV = [
 
 function AdminLayout() {
   const user = useCurrentUser();
+  const { session_user_id } = useDB();
   const nav = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
-    if (user === null) nav({ to: "/auth/login" });
-    else if (user && !user.is_admin) nav({ to: "/" });
-  }, [user, nav]);
+    // Only act once we know the session state
+    if (!session_user_id) {
+      nav({ to: "/auth/login" });
+    } else if (user && !user.is_admin) {
+      nav({ to: "/" });
+    }
+  }, [user, session_user_id, nav]);
 
+  // Waiting for profile/role hydration
+  if (session_user_id && !user) {
+    return <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">Loading admin…</div>;
+  }
   if (!user || !user.is_admin) return null;
 
   return (
