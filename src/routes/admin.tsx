@@ -2,7 +2,7 @@ import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tan
 import { useEffect } from "react";
 import { BarChart3, Users, Package, Download, MessageSquare, Home as HomeIcon } from "lucide-react";
 import { Toaster } from "react-hot-toast";
-import { useCurrentUser } from "@/lib/use-store";
+import { useCurrentUser, useDB } from "@/lib/use-store";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin — DigitVault" }] }),
