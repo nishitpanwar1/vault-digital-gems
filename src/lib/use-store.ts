@@ -5,7 +5,9 @@ export function useDB() {
   const [version, setVersion] = useState(0);
   useEffect(() => {
     const unsub = subscribe(() => setVersion((v) => v + 1));
-    return () => { unsub; };
+    return () => {
+      unsub();
+    };
   }, []);
   return { ...db.get(), _v: version };
 }
