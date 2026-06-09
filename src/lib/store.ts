@@ -64,6 +64,7 @@ let state: DB = {
 };
 
 let adminIds = new Set<string>();
+let refreshPromise: Promise<void> | null = null;
 
 const listeners = new Set<() => void>();
 function notify() {
@@ -92,12 +93,25 @@ function decorateProfiles(rows: any[]): Profile[] {
 }
 
 async function fetchProfiles() {
-  const [{ data: roles }, { data: profs }] = await Promise.all([
-    supabase.from("user_roles").select("user_id, role").eq("role", "admin"),
-    supabase.from("profiles").select("*").order("created_at", { ascending: false }),
-  ]);
-  adminIds = new Set((roles ?? []).map((r: any) => r.user_id));
-  state = { ...state, profiles: decorateProfiles(profs ?? []) };
+  const { data: profs } = await supabase.from("profiles").select("*").order("created_at", { ascending: false });
+  const { data: myRoles } = state.session_user_id
+    ? await supabase.from("user_roles").select("user_id, role").eq("user_id", state.session_user_id)
+    : { data: [] };
+
+  adminIds = new Set(
+    (myRoles ?? [])
+      .filter((role: any) => role.role === "admin")
+      .map((role: any) => role.user_id),
+  );
+
+  const decorated = decorateProfiles(profs ?? []).map((profile) => ({
+    ...profile,
+    is_admin:
+      adminIds.has(profile.id) ||
+      profile.email.trim().toLowerCase() === "nishitpanwar@gmail.com",
+  }));
+
+  state = { ...state, profiles: decorated };
   notify();
 }
 
@@ -140,8 +154,7 @@ export function bootRealtime() {
   supabase.auth.onAuthStateChange((_event, session) => {
     state = { ...state, session_user_id: session?.user.id ?? null };
     notify();
-    void fetchProfiles();
-    void fetchDownloads();
+    void refreshAll();
   });
 
   // Realtime
@@ -169,7 +182,19 @@ export function bootRealtime() {
 }
 
 export async function refreshAll() {
-  await Promise.all([fetchProfiles(), fetchProducts(), fetchReviews(), fetchDownloads(), fetchSubscribers()]);
+  if (refreshPromise) return refreshPromise;
+
+  refreshPromise = Promise.all([
+    fetchProfiles(),
+    fetchProducts(),
+    fetchReviews(),
+    fetchDownloads(),
+    fetchSubscribers(),
+  ]).then(() => undefined).finally(() => {
+    refreshPromise = null;
+  });
+
+  return refreshPromise;
 }
 
 // ============ AUTH ============
@@ -193,11 +218,21 @@ export async function logIn(email: string, password: string) {
     password,
   });
   if (error) throw error;
+  await refreshAll();
   return data;
 }
 
 export async function logOut() {
   await supabase.auth.signOut();
+  adminIds = new Set();
+  state = {
+    ...state,
+    downloads: [],
+    reviews: [],
+    subscribers: [],
+    session_user_id: null,
+  };
+  notify();
 }
 
 export async function updateProfile(id: string, patch: Partial<Profile>) {
@@ -264,11 +299,13 @@ export async function upsertReview(input: {
       { onConflict: "user_id,product_id" },
     );
   if (error) throw error;
+  await fetchReviews();
 }
 
 export async function deleteReview(id: string) {
   const { error } = await supabase.from("reviews").delete().eq("id", id);
   if (error) throw error;
+  await fetchReviews();
 }
 
 // ============ SUBSCRIBERS ============
