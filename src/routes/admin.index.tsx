@@ -128,7 +128,7 @@ function AdminOverview() {
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        <div className="rounded-2xl border bg-card p-5 lg:col-span-2">
+        <div className="min-w-0 rounded-2xl border bg-card p-5 lg:col-span-2">
           <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold"><TrendingUp size={14} /> Downloads — last 30 days</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -143,7 +143,7 @@ function AdminOverview() {
           </div>
         </div>
 
-        <div className="rounded-2xl border bg-card p-5">
+        <div className="min-w-0 rounded-2xl border bg-card p-5">
           <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold"><UserPlus size={14} /> Signups</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -166,7 +166,7 @@ function AdminOverview() {
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        <div className="rounded-2xl border bg-card p-5 lg:col-span-2">
+        <div className="min-w-0 rounded-2xl border bg-card p-5 lg:col-span-2">
           <h3 className="mb-4 text-sm font-semibold">Top 5 most downloaded</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
