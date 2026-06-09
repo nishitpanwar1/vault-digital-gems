@@ -17,6 +17,7 @@ export function Navbar() {
   const links = [
     { to: "/", label: "Home" },
     { to: "/products", label: "Products" },
+    { to: "/about", label: "About" },
   ];
 
   function handleLogout() {
