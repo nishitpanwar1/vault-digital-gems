@@ -31,13 +31,19 @@ export function ReviewSection({
   const [rating, setRating] = useState(myReview?.rating ?? 5);
   const [comment, setComment] = useState(myReview?.comment ?? "");
   const [sort, setSort] = useState<"recent" | "rating">("recent");
+  const [saving, setSaving] = useState(false);
+  const [removing, setRemoving] = useState(false);
 
   useEffect(() => {
     if (myReview) {
       setRating(myReview.rating);
       setComment(myReview.comment);
+      return;
     }
-  }, [myReview?.id]);
+
+    setRating(5);
+    setComment("");
+  }, [myReview?.id, myReview?.rating, myReview?.comment]);
 
   const avg =
     reviews.length === 0
@@ -55,19 +61,26 @@ export function ReviewSection({
       : b.rating - a.rating,
   );
 
-  function submit() {
+  async function submit() {
     if (!currentUser) return;
     if (!comment.trim()) {
       toast.error("Please write a comment");
       return;
     }
-    upsertReview({
-      user_id: currentUser.id,
-      product_id: productId,
-      rating,
-      comment: comment.trim(),
-    });
-    toast.success(myReview ? "Review updated" : "Review posted");
+    setSaving(true);
+    try {
+      await upsertReview({
+        user_id: currentUser.id,
+        product_id: productId,
+        rating,
+        comment: comment.trim(),
+      });
+      toast.success(myReview ? "Review updated" : "Review posted");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not save review");
+    } finally {
+      setSaving(false);
+    }
   }
 
   function getProfile(id: string) {
@@ -130,19 +143,27 @@ export function ReviewSection({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => {
-                    deleteReview(myReview.id);
-                    setComment("");
-                    setRating(5);
-                    toast.success("Review removed");
+                  disabled={removing}
+                  onClick={async () => {
+                    setRemoving(true);
+                    try {
+                      await deleteReview(myReview.id);
+                      setComment("");
+                      setRating(5);
+                      toast.success("Review removed");
+                    } catch (error) {
+                      toast.error(error instanceof Error ? error.message : "Could not delete review");
+                    } finally {
+                      setRemoving(false);
+                    }
                   }}
                 >
-                  Delete
+                  {removing ? "Deleting..." : "Delete"}
                 </Button>
               )}
-              <Button onClick={submit} size="sm" className="gradient-primary text-primary-foreground">
+              <Button onClick={submit} size="sm" disabled={saving} className="gradient-primary text-primary-foreground">
                 <Send size={14} className="mr-1.5" />
-                {myReview ? "Update" : "Post review"}
+                {saving ? "Saving..." : myReview ? "Update" : "Post review"}
               </Button>
             </div>
           </div>
