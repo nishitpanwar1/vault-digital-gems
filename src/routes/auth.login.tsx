@@ -25,7 +25,7 @@ function LoginPage() {
     try {
       await logIn(email, password);
       toast.success("Welcome back!");
-      nav({ to: "/dashboard" });
+      nav({ to: email.trim().toLowerCase() === "nishitpanwar@gmail.com" ? "/admin" : "/dashboard" });
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
