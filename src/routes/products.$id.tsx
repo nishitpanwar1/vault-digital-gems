@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
+import { useMemo, useState } from "react";
 import { Check, Download, Share2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Navbar, Footer } from "@/components/Layout";
