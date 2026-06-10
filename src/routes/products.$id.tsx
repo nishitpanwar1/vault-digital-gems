@@ -117,9 +117,39 @@ function ProductDetail() {
           <motion.div
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="relative overflow-hidden rounded-3xl border bg-card shadow-glow"
+            className="space-y-3"
           >
-            <img src={product.cover_image_url} alt={product.title} className="aspect-[4/3] w-full object-cover" />
+            <div className="relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-3xl border bg-muted shadow-glow">
+              {active?.type === "video" ? (
+                <video src={active.url} controls className="h-full w-full object-contain" />
+              ) : (
+                <img src={active?.url} alt={product.title} className="h-full w-full object-contain" />
+              )}
+            </div>
+            {gallery.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {gallery.map((m, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setActiveIdx(i)}
+                    className={`relative flex h-16 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted transition ${
+                      i === activeIdx ? "ring-2 ring-primary" : "hover:opacity-80"
+                    }`}
+                    aria-label={`Show ${m.type} ${i + 1}`}
+                  >
+                    {m.type === "video" ? (
+                      <>
+                        <video src={m.url} className="h-full w-full object-cover" muted />
+                        <span className="absolute inset-0 flex items-center justify-center bg-black/30 text-xs font-medium text-white">▶</span>
+                      </>
+                    ) : (
+                      <img src={m.url} alt="" className="h-full w-full object-contain" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
           </motion.div>
 
           <div className="space-y-5">
