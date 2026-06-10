@@ -120,7 +120,8 @@ async function fetchProfiles() {
 
 async function fetchProducts() {
   const { data } = await supabase.from("products").select("*").order("created_at", { ascending: false });
-  state = { ...state, products: (data ?? []) as Product[] };
+  const products = (data ?? []).map((p: any) => ({ ...p, media: Array.isArray(p.media) ? p.media : [] })) as Product[];
+  state = { ...state, products };
   notify();
 }
 
