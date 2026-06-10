@@ -9,6 +9,7 @@ import { StarRating } from "@/components/StarRating";
 import { Button } from "@/components/ui/button";
 import { useCurrentUser, useDB } from "@/lib/use-store";
 import { hasDownloaded, recordDownload } from "@/lib/store";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/products/$id")({
   component: ProductDetail,
@@ -59,14 +60,28 @@ function ProductDetail() {
     .filter((p) => p.id !== id && p.category === product.category && p.is_published)
     .slice(0, 3);
 
-  function handleDownload() {
+  async function handleDownload() {
     if (!user) {
       toast.error("Please sign in to download");
       nav({ to: "/auth/login" });
       return;
     }
-    recordDownload(user.id, id);
-    toast.success(`Downloading "${product!.title}"...`);
+    try {
+      await recordDownload(user.id, id);
+      let url = product!.file_url;
+      if (url.startsWith("storage:")) {
+        const [, bucketAndPath] = url.split("storage:");
+        const [bucket, ...rest] = bucketAndPath.split("/");
+        const path = rest.join("/");
+        const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 60 * 60, { download: true });
+        if (error || !data) throw error || new Error("Could not sign URL");
+        url = data.signedUrl;
+      }
+      window.open(url, "_blank");
+      toast.success(`Downloading "${product!.title}"...`);
+    } catch (e: any) {
+      toast.error(e?.message || "Download failed");
+    }
   }
 
   function share() {
