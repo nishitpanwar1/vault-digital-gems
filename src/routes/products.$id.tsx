@@ -57,6 +57,16 @@ function ProductDetail() {
   const avg = reviews.length === 0 ? 0 : reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
   const downloaded = user ? hasDownloaded(user.id, id) : false;
 
+  const gallery = useMemo(() => {
+    const items: { type: "image" | "video"; url: string }[] = [
+      { type: "image", url: product.cover_image_url },
+      ...(product.media ?? []),
+    ];
+    return items.filter((m) => !!m.url);
+  }, [product.cover_image_url, product.media]);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const active = gallery[Math.min(activeIdx, gallery.length - 1)] ?? gallery[0];
+
   const related = data.products
     .filter((p) => p.id !== id && p.category === product.category && p.is_published)
     .slice(0, 3);
