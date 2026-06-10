@@ -101,14 +101,17 @@ function ProductModal({ product, onClose }: { product: Product | null; onClose: 
     price: product?.price ?? 0,
     cover_image_url: product?.cover_image_url ?? "",
     file_url: product?.file_url ?? "",
+    media: (product?.media ?? []) as { type: "image" | "video"; url: string }[],
     is_published: product?.is_published ?? true,
   });
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [productFile, setProductFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string>(form.cover_image_url);
   const [saving, setSaving] = useState(false);
+  const [galleryUploading, setGalleryUploading] = useState(false);
   const coverRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const galleryRef = useRef<HTMLInputElement>(null);
 
   function pickCover(f: File | null) {
     setCoverFile(f);
@@ -130,6 +133,30 @@ function ProductModal({ product, onClose }: { product: Product | null; onClose: 
       return data.signedUrl;
     }
     return `storage:product-files/${path}`;
+  }
+
+  async function addGalleryFiles(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setGalleryUploading(true);
+    try {
+      const added: { type: "image" | "video"; url: string }[] = [];
+      for (const f of Array.from(files)) {
+        const isVideo = f.type.startsWith("video/");
+        const url = await uploadTo("product-covers", f);
+        added.push({ type: isVideo ? "video" : "image", url });
+      }
+      setForm((s) => ({ ...s, media: [...s.media, ...added] }));
+      toast.success(`${added.length} item(s) added`);
+    } catch (e: any) {
+      toast.error(e?.message || "Upload failed");
+    } finally {
+      setGalleryUploading(false);
+      if (galleryRef.current) galleryRef.current.value = "";
+    }
+  }
+
+  function removeMedia(idx: number) {
+    setForm((s) => ({ ...s, media: s.media.filter((_, i) => i !== idx) }));
   }
 
   async function save(e: React.FormEvent) {
@@ -192,7 +219,9 @@ function ProductModal({ product, onClose }: { product: Product | null; onClose: 
           <Field label="Cover image">
             <div className="flex items-center gap-3">
               {coverPreview ? (
-                <img src={coverPreview} alt="" className="h-16 w-24 rounded object-cover border" />
+                <div className="flex h-16 w-24 items-center justify-center overflow-hidden rounded border bg-muted">
+                  <img src={coverPreview} alt="" className="h-full w-full object-contain" />
+                </div>
               ) : (
                 <div className="flex h-16 w-24 items-center justify-center rounded border bg-muted text-xs text-muted-foreground">No image</div>
               )}
@@ -202,6 +231,44 @@ function ProductModal({ product, onClose }: { product: Product | null; onClose: 
               </Button>
             </div>
             {coverFile && <p className="mt-1 truncate text-xs text-muted-foreground">{coverFile.name}</p>}
+          </Field>
+
+          <Field label="Gallery (extra images & videos)">
+            <div className="space-y-2">
+              {form.media.length > 0 && (
+                <div className="grid grid-cols-4 gap-2">
+                  {form.media.map((m, i) => (
+                    <div key={i} className="group relative flex h-20 items-center justify-center overflow-hidden rounded border bg-muted">
+                      {m.type === "video" ? (
+                        <video src={m.url} className="h-full w-full object-cover" muted />
+                      ) : (
+                        <img src={m.url} alt="" className="h-full w-full object-contain" />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => removeMedia(i)}
+                        className="absolute right-1 top-1 rounded-full bg-background/80 p-0.5 opacity-0 transition-opacity group-hover:opacity-100"
+                        aria-label="Remove"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <input
+                ref={galleryRef}
+                type="file"
+                multiple
+                accept="image/*,video/*"
+                className="hidden"
+                onChange={(e) => addGalleryFiles(e.target.files)}
+              />
+              <Button type="button" variant="outline" onClick={() => galleryRef.current?.click()} disabled={galleryUploading}>
+                {galleryUploading ? <Loader2 size={14} className="mr-1.5 animate-spin" /> : <Upload size={14} className="mr-1.5" />}
+                {galleryUploading ? "Uploading…" : "Add images / videos"}
+              </Button>
+            </div>
           </Field>
 
           <Field label="Product file (zip, pdf, etc.)">

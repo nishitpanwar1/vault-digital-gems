@@ -14,6 +14,8 @@ export type Profile = {
   created_at: string;
 };
 
+export type MediaItem = { type: "image" | "video"; url: string };
+
 export type Product = {
   id: string;
   title: string;
@@ -22,6 +24,7 @@ export type Product = {
   price: number;
   cover_image_url: string;
   file_url: string;
+  media: MediaItem[];
   download_count: number;
   is_published: boolean;
   created_at: string;
@@ -117,7 +120,8 @@ async function fetchProfiles() {
 
 async function fetchProducts() {
   const { data } = await supabase.from("products").select("*").order("created_at", { ascending: false });
-  state = { ...state, products: (data ?? []) as Product[] };
+  const products = (data ?? []).map((p: any) => ({ ...p, media: Array.isArray(p.media) ? p.media : [] })) as Product[];
+  state = { ...state, products };
   notify();
 }
 
@@ -253,6 +257,7 @@ export async function createProduct(p: Omit<Product, "id" | "created_at" | "down
     price: p.price,
     cover_image_url: p.cover_image_url,
     file_url: p.file_url,
+    media: p.media ?? [],
     is_published: p.is_published,
   });
   if (error) throw error;

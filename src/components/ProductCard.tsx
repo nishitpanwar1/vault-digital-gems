@@ -38,9 +38,9 @@ export function ProductCard({
             src={product.cover_image_url}
             alt={product.title}
             loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="absolute inset-0 h-full w-full object-contain p-2 transition-transform duration-500 group-hover:scale-105"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
           <span className="absolute left-3 top-3 rounded-full bg-background/90 px-3 py-1 text-xs font-medium backdrop-blur">
             {CATEGORY_LABELS[product.category]}
           </span>

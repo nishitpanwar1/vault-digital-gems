@@ -53,6 +53,7 @@ export type Database = {
           file_url: string
           id: string
           is_published: boolean
+          media: Json
           price: number
           title: string
         }
@@ -65,6 +66,7 @@ export type Database = {
           file_url?: string
           id?: string
           is_published?: boolean
+          media?: Json
           price?: number
           title: string
         }
@@ -77,6 +79,7 @@ export type Database = {
           file_url?: string
           id?: string
           is_published?: boolean
+          media?: Json
           price?: number
           title?: string
         }
