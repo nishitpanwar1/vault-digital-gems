@@ -9,6 +9,7 @@ import { StarRating } from "@/components/StarRating";
 import { Button } from "@/components/ui/button";
 import { useCurrentUser, useDB } from "@/lib/use-store";
 import { hasDownloaded, recordDownload } from "@/lib/store";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/products/$id")({
   component: ProductDetail,
