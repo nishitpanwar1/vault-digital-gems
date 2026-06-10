@@ -14,6 +14,8 @@ export type Profile = {
   created_at: string;
 };
 
+export type MediaItem = { type: "image" | "video"; url: string };
+
 export type Product = {
   id: string;
   title: string;
@@ -22,6 +24,7 @@ export type Product = {
   price: number;
   cover_image_url: string;
   file_url: string;
+  media: MediaItem[];
   download_count: number;
   is_published: boolean;
   created_at: string;
