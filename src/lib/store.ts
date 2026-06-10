@@ -256,6 +256,7 @@ export async function createProduct(p: Omit<Product, "id" | "created_at" | "down
     price: p.price,
     cover_image_url: p.cover_image_url,
     file_url: p.file_url,
+    media: p.media ?? [],
     is_published: p.is_published,
   });
   if (error) throw error;
