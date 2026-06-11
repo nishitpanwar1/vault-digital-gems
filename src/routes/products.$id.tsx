@@ -13,6 +13,71 @@ import { hasDownloaded, recordDownload } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/products/$id")({
+  loader: async ({ params }) => {
+    const { data } = await supabase
+      .from("products")
+      .select("id, title, description, cover_image_url, price, category, download_count")
+      .eq("id", params.id)
+      .eq("is_published", true)
+      .maybeSingle();
+    return { product: data };
+  },
+  head: ({ params, loaderData }) => {
+    const p = loaderData?.product;
+    const url = `https://vault-digital-gems.lovable.app/products/${params.id}`;
+    if (!p) {
+      return {
+        meta: [
+          { title: "Product not found — DigitVault" },
+          { name: "description", content: "This digital product is no longer available on DigitVault." },
+          { property: "og:url", content: url },
+          { name: "robots", content: "noindex,follow" },
+        ],
+        links: [{ rel: "canonical", href: url }],
+      };
+    }
+    const title = `${p.title} — DigitVault`.slice(0, 60);
+    const baseDesc = (p.description || `${p.title} on DigitVault.`).replace(/\s+/g, " ").trim();
+    const desc = (baseDesc.length < 50 ? `${baseDesc} Premium digital product on DigitVault — instant download.` : baseDesc).slice(0, 158);
+    return {
+      meta: [
+        { title },
+        { name: "description", content: desc },
+        { property: "og:title", content: title },
+        { property: "og:description", content: desc },
+        { property: "og:type", content: "product" },
+        { property: "og:url", content: url },
+        ...(p.cover_image_url
+          ? [
+              { property: "og:image", content: p.cover_image_url },
+              { name: "twitter:image", content: p.cover_image_url },
+            ]
+          : []),
+      ],
+      links: [{ rel: "canonical", href: url }],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            name: p.title,
+            description: baseDesc,
+            image: p.cover_image_url || undefined,
+            category: p.category,
+            url,
+            offers: {
+              "@type": "Offer",
+              price: p.price,
+              priceCurrency: "USD",
+              availability: "https://schema.org/InStock",
+              url,
+            },
+          }),
+        },
+      ],
+    };
+  },
   component: ProductDetail,
   notFoundComponent: () => (
     <div className="flex min-h-screen flex-col">
