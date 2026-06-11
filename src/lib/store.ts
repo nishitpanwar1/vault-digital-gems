@@ -179,10 +179,8 @@ export function bootRealtime() {
     .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () => void fetchProfiles())
     .on("postgres_changes", { event: "*", schema: "public", table: "user_roles" }, () => void fetchProfiles())
     .subscribe();
-  supabase
-    .channel("dv-subs")
-    .on("postgres_changes", { event: "*", schema: "public", table: "subscribers" }, () => void fetchSubscribers())
-    .subscribe();
+  // 'subscribers' and 'user_roles' are intentionally NOT subscribed via Realtime
+  // to avoid broadcasting sensitive rows. Admin pages refetch on demand.
 }
 
 export async function refreshAll() {
