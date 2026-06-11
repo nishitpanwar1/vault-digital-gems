@@ -9,10 +9,25 @@ import { useDB } from "@/lib/use-store";
 export const Route = createFileRoute("/products/")({
   head: () => ({
     meta: [
-      { title: "Browse Products — DigitVault" },
-      { name: "description", content: "Explore all premium digital products: e-books, templates, courses, and bundles." },
-      { property: "og:title", content: "Browse Products — DigitVault" },
-      { property: "og:description", content: "Explore all premium digital products." },
+      { title: "Browse Digital Products — DigitVault" },
+      { name: "description", content: "Explore all premium digital products on DigitVault: e-books, templates, courses, and bundles for creators and founders." },
+      { property: "og:title", content: "Browse Digital Products — DigitVault" },
+      { property: "og:description", content: "Explore all premium digital products: e-books, templates, courses, and bundles." },
+      { property: "og:url", content: "https://vault-digital-gems.lovable.app/products" },
+    ],
+    links: [{ rel: "canonical", href: "https://vault-digital-gems.lovable.app/products" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          name: "Browse Digital Products",
+          url: "https://vault-digital-gems.lovable.app/products",
+          isPartOf: { "@type": "WebSite", name: "DigitVault", url: "https://vault-digital-gems.lovable.app" },
+          about: "E-books, templates, courses, and bundles for creators and founders.",
+        }),
+      },
     ],
   }),
   component: ProductsPage,

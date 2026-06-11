@@ -21,8 +21,36 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: "DigitVault" },
       { property: "og:description", content: "Premium digital products marketplace." },
       { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "DigitVault" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              name: "DigitVault",
+              url: "https://vault-digital-gems.lovable.app",
+              founder: { "@type": "Person", name: "Nishit Panwar" },
+            },
+            {
+              "@type": "WebSite",
+              name: "DigitVault",
+              url: "https://vault-digital-gems.lovable.app",
+              potentialAction: {
+                "@type": "SearchAction",
+                target: "https://vault-digital-gems.lovable.app/products?q={search_term_string}",
+                "query-input": "required name=search_term_string",
+              },
+            },
+          ],
+        }),
+      },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,

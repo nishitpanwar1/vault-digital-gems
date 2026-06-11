@@ -9,7 +9,17 @@ import { logIn } from "@/lib/store";
 import { lovable } from "@/integrations/lovable";
 
 export const Route = createFileRoute("/auth/login")({
-  head: () => ({ meta: [{ title: "Log in — DigitVault" }] }),
+  head: () => ({
+    meta: [
+      { title: "Log in — DigitVault" },
+      { name: "description", content: "Sign in to your DigitVault account to access your downloads, reviews, and purchased digital products." },
+      { property: "og:title", content: "Log in — DigitVault" },
+      { property: "og:description", content: "Sign in to access your DigitVault downloads and account." },
+      { property: "og:url", content: "https://vault-digital-gems.lovable.app/auth/login" },
+      { name: "robots", content: "noindex,follow" },
+    ],
+    links: [{ rel: "canonical", href: "https://vault-digital-gems.lovable.app/auth/login" }],
+  }),
   component: LoginPage,
 });
 

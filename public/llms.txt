@@ -1,0 +1,9 @@
+# DigitVault
+
+> Marketplace of premium digital products — e-books, templates, courses, and bundles — curated for creators and founders by Nishit Panwar.
+
+## Pages
+
+- [Home](/): Featured digital products and newsletter signup.
+- [Browse Products](/products): All published e-books, templates, courses, and bundles with search and filters.
+- [About](/about): Story behind DigitVault and the DISCIPLINE4_YOU YouTube channel.

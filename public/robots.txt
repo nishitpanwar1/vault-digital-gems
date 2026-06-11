@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /auth
+
+Sitemap: https://vault-digital-gems.lovable.app/sitemap.xml

@@ -9,7 +9,17 @@ import { signUp } from "@/lib/store";
 import { lovable } from "@/integrations/lovable";
 
 export const Route = createFileRoute("/auth/signup")({
-  head: () => ({ meta: [{ title: "Create account — DigitVault" }] }),
+  head: () => ({
+    meta: [
+      { title: "Create account — DigitVault" },
+      { name: "description", content: "Create a free DigitVault account to download digital products, leave reviews, and track your purchases." },
+      { property: "og:title", content: "Create account — DigitVault" },
+      { property: "og:description", content: "Sign up free to download e-books, templates, courses, and bundles." },
+      { property: "og:url", content: "https://vault-digital-gems.lovable.app/auth/signup" },
+      { name: "robots", content: "noindex,follow" },
+    ],
+    links: [{ rel: "canonical", href: "https://vault-digital-gems.lovable.app/auth/signup" }],
+  }),
   component: SignUpPage,
 });
 

@@ -15,10 +15,12 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "DigitVault — Premium Digital Products for Creators" },
-      { name: "description", content: "E-books, templates, courses, and bundles curated for makers. Browse free and paid digital products." },
+      { name: "description", content: "E-books, templates, courses, and bundles curated for makers. Browse free and paid digital products on DigitVault." },
       { property: "og:title", content: "DigitVault — Premium Digital Products" },
       { property: "og:description", content: "E-books, templates, courses, and bundles curated for makers." },
+      { property: "og:url", content: "https://vault-digital-gems.lovable.app/" },
     ],
+    links: [{ rel: "canonical", href: "https://vault-digital-gems.lovable.app/" }],
   }),
   component: HomePage,
 });
