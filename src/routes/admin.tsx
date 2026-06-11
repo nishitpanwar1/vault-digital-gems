@@ -5,7 +5,17 @@ import { Toaster } from "react-hot-toast";
 import { useCurrentUser, useDB } from "@/lib/use-store";
 
 export const Route = createFileRoute("/admin")({
-  head: () => ({ meta: [{ title: "Admin — DigitVault" }] }),
+  head: () => ({
+    meta: [
+      { title: "Admin — DigitVault" },
+      { name: "description", content: "Admin console for DigitVault — manage products, users, downloads, and reviews across the marketplace." },
+      { property: "og:title", content: "Admin — DigitVault" },
+      { property: "og:description", content: "Internal admin console for managing DigitVault." },
+      { property: "og:url", content: "https://vault-digital-gems.lovable.app/admin" },
+      { name: "robots", content: "noindex,nofollow" },
+    ],
+    links: [{ rel: "canonical", href: "https://vault-digital-gems.lovable.app/admin" }],
+  }),
   component: AdminLayout,
 });
 

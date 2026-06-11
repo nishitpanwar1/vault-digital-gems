@@ -8,10 +8,12 @@ export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
       { title: "About — Nishit Panwar | DigitVault" },
-      { name: "description", content: "Meet Nishit Panwar, founder of DigitVault and creator behind the DISCIPLINE4_YOU YouTube channel." },
+      { name: "description", content: "Meet Nishit Panwar, founder of DigitVault and creator behind the DISCIPLINE4_YOU YouTube channel building discipline-focused content." },
       { property: "og:title", content: "About — Nishit Panwar | DigitVault" },
       { property: "og:description", content: "Meet Nishit Panwar, founder of DigitVault and creator behind DISCIPLINE4_YOU." },
+      { property: "og:url", content: "https://vault-digital-gems.lovable.app/about" },
     ],
+    links: [{ rel: "canonical", href: "https://vault-digital-gems.lovable.app/about" }],
   }),
   component: AboutPage,
 });
