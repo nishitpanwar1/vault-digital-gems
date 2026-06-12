@@ -14,13 +14,18 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/products/$id")({
   loader: async ({ params }) => {
-    const { data } = await supabase
-      .from("products")
-      .select("id, title, description, cover_image_url, price, category, download_count")
-      .eq("id", params.id)
-      .eq("is_published", true)
-      .maybeSingle();
-    return { product: data };
+    const [{ data: product }, { data: reviews }] = await Promise.all([
+      supabase
+        .from("products")
+        .select("id, title, description, cover_image_url, price, category, download_count")
+        .eq("id", params.id)
+        .eq("is_published", true)
+        .maybeSingle(),
+      supabase.from("reviews").select("rating").eq("product_id", params.id),
+    ]);
+    const ratings = reviews ?? [];
+    const avg = ratings.length ? ratings.reduce((s, r) => s + (r.rating ?? 0), 0) / ratings.length : 0;
+    return { product, ratingAvg: avg, ratingCount: ratings.length };
   },
   head: ({ params, loaderData }) => {
     const p = loaderData?.product;
@@ -39,6 +44,42 @@ export const Route = createFileRoute("/products/$id")({
     const title = `${p.title} — DigitVault`.slice(0, 60);
     const baseDesc = (p.description || `${p.title} on DigitVault.`).replace(/\s+/g, " ").trim();
     const desc = (baseDesc.length < 50 ? `${baseDesc} Premium digital product on DigitVault — instant download.` : baseDesc).slice(0, 158);
+    const categoryLabel: Record<string, string> = { ebooks: "E-Book", templates: "Template", bundles: "Bundle", courses: "Course" };
+    const productSchema: Record<string, unknown> = {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: p.title,
+      description: baseDesc,
+      image: p.cover_image_url || undefined,
+      category: categoryLabel[p.category] ?? p.category,
+      sku: p.id,
+      brand: { "@type": "Brand", name: "DigitVault" },
+      url,
+      offers: {
+        "@type": "Offer",
+        price: p.price,
+        priceCurrency: "USD",
+        availability: "https://schema.org/InStock",
+        url,
+        seller: { "@type": "Organization", name: "DigitVault" },
+      },
+    };
+    if (loaderData && loaderData.ratingCount > 0) {
+      productSchema.aggregateRating = {
+        "@type": "AggregateRating",
+        ratingValue: Number(loaderData.ratingAvg.toFixed(2)),
+        reviewCount: loaderData.ratingCount,
+      };
+    }
+    const breadcrumb = {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: "https://vault-digital-gems.lovable.app/" },
+        { "@type": "ListItem", position: 2, name: "Products", item: "https://vault-digital-gems.lovable.app/products" },
+        { "@type": "ListItem", position: 3, name: p.title, item: url },
+      ],
+    };
     return {
       meta: [
         { title },
@@ -47,34 +88,23 @@ export const Route = createFileRoute("/products/$id")({
         { property: "og:description", content: desc },
         { property: "og:type", content: "product" },
         { property: "og:url", content: url },
+        { property: "product:price:amount", content: String(p.price) },
+        { property: "product:price:currency", content: "USD" },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: desc },
         ...(p.cover_image_url
           ? [
               { property: "og:image", content: p.cover_image_url },
+              { property: "og:image:alt", content: p.title },
               { name: "twitter:image", content: p.cover_image_url },
             ]
           : []),
       ],
       links: [{ rel: "canonical", href: url }],
       scripts: [
-        {
-          type: "application/ld+json",
-          children: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "Product",
-            name: p.title,
-            description: baseDesc,
-            image: p.cover_image_url || undefined,
-            category: p.category,
-            url,
-            offers: {
-              "@type": "Offer",
-              price: p.price,
-              priceCurrency: "USD",
-              availability: "https://schema.org/InStock",
-              url,
-            },
-          }),
-        },
+        { type: "application/ld+json", children: JSON.stringify(productSchema) },
+        { type: "application/ld+json", children: JSON.stringify(breadcrumb) },
       ],
     };
   },
