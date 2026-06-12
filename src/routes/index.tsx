@@ -15,12 +15,31 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "DigitVault — Premium Digital Products for Creators" },
-      { name: "description", content: "E-books, templates, courses, and bundles curated for makers. Browse free and paid digital products on DigitVault." },
+      { name: "description", content: "E-books, templates, courses, and bundles curated for makers. Browse free and paid digital products on DigitVault — instant download." },
+      { name: "keywords", content: "digital products, ebooks, templates, online courses, creator marketplace, digital downloads, notion templates" },
       { property: "og:title", content: "DigitVault — Premium Digital Products" },
-      { property: "og:description", content: "E-books, templates, courses, and bundles curated for makers." },
+      { property: "og:description", content: "E-books, templates, courses, and bundles curated for makers and founders." },
+      { property: "og:type", content: "website" },
       { property: "og:url", content: "https://vault-digital-gems.lovable.app/" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "DigitVault — Premium Digital Products" },
+      { name: "twitter:description", content: "E-books, templates, courses, and bundles curated for makers." },
     ],
     links: [{ rel: "canonical", href: "https://vault-digital-gems.lovable.app/" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          name: "DigitVault — Premium Digital Products",
+          url: "https://vault-digital-gems.lovable.app/",
+          description: "Hand-curated e-books, templates, courses, and bundles for creators and founders.",
+          isPartOf: { "@type": "WebSite", name: "DigitVault", url: "https://vault-digital-gems.lovable.app" },
+          about: ["E-books", "Templates", "Online Courses", "Digital Bundles"],
+        }),
+      },
+    ],
   }),
   component: HomePage,
 });

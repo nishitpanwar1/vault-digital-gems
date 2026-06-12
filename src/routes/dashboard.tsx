@@ -17,12 +17,12 @@ export const Route = createFileRoute("/dashboard")({
     meta: [
       { title: "Your Dashboard — DigitVault" },
       { name: "description", content: "Your personal DigitVault dashboard: view downloaded products, manage reviews, and update your profile." },
+      { name: "robots", content: "noindex,nofollow" },
       { property: "og:title", content: "Your Dashboard — DigitVault" },
       { property: "og:description", content: "Manage your downloads, reviews, and profile on DigitVault." },
+      { property: "og:type", content: "website" },
       { property: "og:url", content: "https://vault-digital-gems.lovable.app/dashboard" },
-      { name: "robots", content: "noindex,nofollow" },
     ],
-    links: [{ rel: "canonical", href: "https://vault-digital-gems.lovable.app/dashboard" }],
   }),
   component: Dashboard,
 });
