@@ -5,8 +5,11 @@
   "observability": {
     "enabled": true
   },
-  "main": "@tanstack/react-start/server-entry",
+  "main": "./dist/server/server.js",
   "compatibility_flags": [
     "nodejs_compat"
-  ]
+  ],
+  "assets": {
+    "directory": "./dist/client"
+  }
 }
