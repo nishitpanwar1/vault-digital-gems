@@ -29,21 +29,21 @@ const NAV = [
 
 function AdminLayout() {
   const user = useCurrentUser();
-  const { session_user_id } = useDB();
+  const { session_user_id, auth_ready } = useDB();
   const nav = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
-    // Only act once we know the session state
+    if (!auth_ready) return;
     if (!session_user_id) {
       nav({ to: "/auth/login" });
     } else if (user && !user.is_admin) {
       nav({ to: "/" });
     }
-  }, [user, session_user_id, nav]);
+  }, [user, session_user_id, auth_ready, nav]);
 
   // Waiting for profile/role hydration
-  if (session_user_id && !user) {
+  if (!auth_ready || (session_user_id && !user)) {
     return <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">Loading admin…</div>;
   }
   if (!user || !user.is_admin) return null;
