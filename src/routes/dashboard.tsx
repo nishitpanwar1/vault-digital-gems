@@ -33,8 +33,8 @@ function Dashboard() {
   const nav = useNavigate();
 
   useEffect(() => {
-    if (user === null) nav({ to: "/auth/login" });
-  }, [user, nav]);
+    if (data.auth_ready && !data.session_user_id) nav({ to: "/auth/login" });
+  }, [data.auth_ready, data.session_user_id, nav]);
 
   const [name, setName] = useState(user?.full_name ?? "");
   const [avatar, setAvatar] = useState(user?.avatar_url ?? "");
@@ -46,7 +46,13 @@ function Dashboard() {
     }
   }, [user?.id]);
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
+        {data.session_user_id || !data.auth_ready ? "Loading your dashboard…" : null}
+      </div>
+    );
+  }
 
   const myDownloads = data.downloads
     .filter((d) => d.user_id === user.id)
