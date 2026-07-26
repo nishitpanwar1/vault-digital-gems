@@ -55,6 +55,7 @@ type DB = {
   reviews: Review[];
   subscribers: Subscriber[];
   session_user_id: string | null;
+  auth_ready: boolean;
 };
 
 let state: DB = {
@@ -64,6 +65,7 @@ let state: DB = {
   reviews: [],
   subscribers: [],
   session_user_id: null,
+  auth_ready: false,
 };
 
 let adminIds = new Set<string>();
@@ -150,13 +152,13 @@ export function bootRealtime() {
 
   // Initial session
   supabase.auth.getSession().then(({ data }) => {
-    state = { ...state, session_user_id: data.session?.user.id ?? null };
+    state = { ...state, session_user_id: data.session?.user.id ?? null, auth_ready: true };
     notify();
     void refreshAll();
   });
 
   supabase.auth.onAuthStateChange((_event, session) => {
-    state = { ...state, session_user_id: session?.user.id ?? null };
+    state = { ...state, session_user_id: session?.user.id ?? null, auth_ready: true };
     notify();
     void refreshAll();
   });
@@ -233,6 +235,7 @@ export async function logOut() {
     reviews: [],
     subscribers: [],
     session_user_id: null,
+    auth_ready: true,
   };
   notify();
 }
