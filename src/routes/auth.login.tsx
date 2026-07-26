@@ -5,7 +5,7 @@ import { AuthLayout } from "@/components/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { logIn } from "@/lib/store";
+import { logIn, refreshAll } from "@/lib/store";
 import { lovable } from "@/integrations/lovable";
 
 export const Route = createFileRoute("/auth/login")({
@@ -44,10 +44,23 @@ function LoginPage() {
   }
 
   async function google() {
-    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
-    if (result.error) toast.error(result.error.message);
-    if (!result.redirected && !result.error) nav({ to: "/dashboard" });
+    try {
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+      });
+      if (result.error) {
+        toast.error(result.error.message || "Google sign-in failed");
+        return;
+      }
+      if (result.redirected) return;
+      await refreshAll();
+      toast.success("Welcome back!");
+      nav({ to: "/dashboard" });
+    } catch (err) {
+      toast.error((err as Error).message || "Google sign-in failed");
+    }
   }
+
 
   return (
     <AuthLayout
